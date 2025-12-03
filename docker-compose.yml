@@ -1,0 +1,75 @@
+services:
+  payment-service:
+    build: .
+    ports:
+      - "8086:8086"
+    environment:
+      - DB_HOST_PAYMENT=${DB_HOST_PAYMENT}
+      - DB_PORT_PAYMENT=${DB_PORT_PAYMENT}
+      - DB_DATABASE_PAYMENT=${DB_DATABASE_PAYMENT}
+      - KAFKA_URL=${KAFKA_URL}
+    networks:
+      - app-network
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+
+    
+  mongo:
+    image: mongo:7.0
+    container_name: payment-service-mongo-db
+    environment:
+      - MONGO_INITDB_DATABASE=${DB_DATABASE_PAYMENT}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo:/data/db
+    networks:
+      - app-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.2.4
+    healthcheck:
+      test: [ "CMD", "nc", "-vz", "localhost", "2181" ] 
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181 
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    networks:
+      - app-network
+
+  kafka:
+    image: confluentinc/cp-kafka:6.2.4
+    healthcheck:
+      test: [ "CMD", "nc", "-vz", "localhost", "9092" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    ports:
+      - 29092:29092
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1 
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 
+      KAFKA_LISTENERS: OUTSIDE://:29092,INTERNAL://:9092
+      KAFKA_ADVERTISED_LISTENERS: OUTSIDE://localhost:29092,INTERNAL://kafka:9092 
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT  
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL                                  
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1                                   
+    networks:
+      - app-network
+
+volumes:
+  mongo:
+
+networks:
+  app-network:
+    driver: bridge
