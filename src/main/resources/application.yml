@@ -37,6 +37,10 @@ spring:
       properties:
         spring.json.use.type.headers: false
         spring.json.trusted.packages: "*"
+  
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
     
 topic:
   payment-topic: payment-topic
