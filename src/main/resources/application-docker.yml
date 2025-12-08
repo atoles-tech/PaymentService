@@ -1,0 +1,14 @@
+spring:
+  data:
+    mongodb:
+      host: ${DB_HOST_PAYMENT}
+      port: ${DB_PORT_PAYMENT}
+      database: ${DB_DATABASE_PAYMENT}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_URL}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
